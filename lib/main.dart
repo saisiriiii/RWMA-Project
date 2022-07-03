@@ -46,17 +46,20 @@ class _MapStamState extends State<MapStam> {
   PolylinePoints polylinePoints = PolylinePoints();
   List<LatLng> polylineCoordinates = [];
   List<LatLng>? locationList; //เพิ่มตอนทำ Maker ล่าสุด ++
+  //เพิ่มตอนทำ Maker ล่าสุด ++
   void getLocation() async {
-    //เพิ่มตอนทำ Maker ล่าสุด ++
     var result = await polymaker.getLocation(
       context,
       trackingMode: TrackingMode.PLANAR,
       enableDragMarker: true,
+      autoEditMode: true, //กำหนดให้ใส่หมุดเพิ่มได้เลย แสดงออกมาเลยในหน้า Map2
     );
     if (result != null) {
       setState(() {
         locationList = result;
       });
+      //เช็คค่า LatLng แต่ละหมุดออกไหม locationList
+      print("locationList: ${locationList}");
     }
   }
 
@@ -133,6 +136,13 @@ class _MapStamState extends State<MapStam> {
     //หน้าจอทั้งหน้า แสดงผลทั้งหมดต้องผ่าน Widget build
     return Scaffold(
         appBar: AppBar(title: Text('62020730')),
+        //ปุ่มไปหน้า Map2
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            getLocation();
+          },
+          child: Icon(Icons.add),
+        ),
         body: Container(
           child: GoogleMap(
             mapType: MapType.normal,
