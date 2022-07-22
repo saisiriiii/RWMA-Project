@@ -50,6 +50,11 @@ class _MapStamState extends State<MapStam> {
       locationList; //เพิ่มตอนทำ Marker ล่าสุด ++ *เอาไว้เพิ่ม Marker
   int countIdMarker = 1; // เลขหมุด ตัวนับ ID Marker จะทำให้ ID ไม่ซ้ำกัน
   late LocationData currentLocation; //หาตำแหน่งปัจจุบันของตัวเอง
+
+  List latlog =
+      []; //เก็บ Latlog เอาไว้ไปแสดงเป็นเส้น Polyline (จำนวนข้างในเป็นทศนิยม)
+  int drawVetor = 1; //นับ Maker เพื่อไปลากเส้น
+
   //เพิ่มตอนทำ Marker ล่าสุด ++
   void getLocation() async {
     var result = await polymaker.getLocation(
@@ -68,6 +73,7 @@ class _MapStamState extends State<MapStam> {
 
       //เอาค่า LatLng ตามลำดับออกมา เริ่มตั้งแต่ 1
       locationList.forEach((locatonMarkerList) {
+        //forloop พิกัดไปเรื่อยๆ
         if (countIdMarker == 1) {
           _addMarker(
               LatLng(currentLocation.latitude!.toDouble(),
@@ -79,8 +85,36 @@ class _MapStamState extends State<MapStam> {
             locatonMarkerList, // จุด Marker ปลายทาง
             "$countIdMarker", // ID ของ Marker
             BitmapDescriptor.defaultMarker);
+
+        print(locatonMarkerList.latitude);
+        if (drawVetor == 1) {
+          //จุดปัจจุบันของเรา
+          latlog.insert(drawVetor - 1, currentLocation.latitude!.toDouble());
+          latlog.insert(drawVetor, currentLocation.longitude!.toDouble());
+          drawVetor += 1; //เลือกเพิ่ม 1 จุด
+          // _getPolyline();
+        }
+        // print(latlog);
+
+        if (drawVetor >= 2) {
+          //ปลายทางแต่ละจุด
+          print("drawVetor ${latlog.length}");
+          latlog.insert(latlog.length, locatonMarkerList.latitude);
+          latlog.insert(latlog.length, locatonMarkerList.longitude);
+          setState(() {});
+          print(latlog);
+          _getPolyline(
+              //ส่งพิกัดไปให้ google maps ลากเส้นให้
+              lat_mylocation: latlog[latlog.length - 4],
+              lng_mylocation: latlog[latlog.length - 3],
+              lat_target: latlog[latlog.length - 2],
+              lng_target: latlog[latlog.length - 1]);
+        }
+
         countIdMarker += 1;
+        drawVetor += 1;
       });
+      print("locationList $locationList");
     }
   }
 
@@ -94,11 +128,6 @@ class _MapStamState extends State<MapStam> {
       zoom: 16,
     )));
   }
-
-  double lat_mylocation = 19.2049654; //ประกาศตัวแปร ตำแหน่งของเรา
-  double lng_mylocation = 99.8749145; //ประกาศตัวแปร ตำแหน่งของเรา
-  double lat_target = 19.0284482; //ประกาศตัวแปร ตำแหน่งลูกค้า
-  double lng_target = 99.9009381; //ประกาศตัวแปร ตำแหน่งลูกค้า
 
   static final CameraPosition _kGooglePlex = CameraPosition(
     target: LatLng(19.2049654, 99.8749145), //เป้าหมายเริ่มต้นและคงที่
@@ -128,7 +157,11 @@ class _MapStamState extends State<MapStam> {
     markers[markerId] = marker;
   }
 
-  _getPolyline() async {
+  _getPolyline(
+      {required double lat_mylocation,
+      required double lng_mylocation,
+      required double lat_target,
+      required double lng_target}) async {
     PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
         googleAPiKey,
         PointLatLng(lat_mylocation, lng_mylocation),
